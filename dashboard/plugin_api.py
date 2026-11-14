@@ -95,7 +95,7 @@ class Turn(BaseModel):
 
 
 class ExplainBody(BaseModel):
-    selection: str = Field(..., min_length=1, max_length=10_000)
+    selection: str = Field(..., max_length=10_000)  # emptiness gets a clear 400 in the handler
     context: str = Field(default="", max_length=MAX_CONTEXT_CHARS)
     turns: list[Turn] = Field(default_factory=list)
 
@@ -116,6 +116,16 @@ def explain(body: ExplainBody) -> dict[str, Any]:
     selection = body.selection.strip()[:MAX_SELECTION_CHARS]
     context = (body.context or "").strip()[:MAX_CONTEXT_CHARS]
     turns = body.turns[-MAX_TURNS:]
+
+    if not selection:
+        raise HTTPException(
+            status_code=400,
+            detail="selection is empty — select text and try again",
+        )
+    _log.info(
+        "explain call: selection=%d chars, context=%d chars, turns=%d",
+        len(body.selection), len(body.context or ""), len(body.turns),
+    )
 
     if turns and turns[0].role != "assistant":
         raise HTTPException(status_code=400, detail="first turn must be the assistant's initial explanation")

@@ -182,6 +182,7 @@ function createController(ctx) {
 
   // ---------- card ----------
   function openCard(info) {
+    closeCard() // reset any previous card state BEFORE capturing the new one
     selection = info.text
     contextLabel = String(host.state?.model?.get?.() ?? '').slice(0, 60)
     turns = []
@@ -192,7 +193,6 @@ function createController(ctx) {
   }
 
   function buildCard(rect) {
-    closeCard(false)
     card = el('div', 'se-card')
 
     const head = el('div', 'se-head')
@@ -277,6 +277,11 @@ function createController(ctx) {
   }
 
   async function callBackend(payload) {
+    const sel = String(payload?.selection || '')
+    if (!sel.trim()) {
+      host.notify({ kind: 'error', message: 'Selection Explainer: no selection captured — reselect the text and try again.' })
+      throw new Error('empty selection')
+    }
     return ctx.rest('/explain', { method: 'POST', body: payload })
   }
 
