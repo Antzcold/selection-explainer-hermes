@@ -3,7 +3,7 @@ version: 0.1.0
 description: "Explain selected text anywhere in the Hermes desktop app: an action chip near the selection opens a floating mini-assistant with follow-up questions, answered by the host's active model via ctx.llm (host-owned credentials — no API keys, no provider config)."
 author: "ernestook + harness"
 license: MIT
-homepage: https://github.com/Antzcold/browserchat-selection-explainer
+homepage: https://github.com/Antzcold/selection-explainer-hermes
 requires_hermes: ">=0.21"
 tags: [desktop, ui, llm, explain, selection]
 # UI + API plugin: desktop/plugin.js (selection chip, floating card, palette +
