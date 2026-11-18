@@ -425,38 +425,60 @@ export default {
     const prev = globalThis[GLOBAL_KEY]
     if (prev && typeof prev.teardown === 'function') prev.teardown()
 
+    // The HUD is a chrome-free floating band with no statusbar and no command
+    // palette — registering UI areas there can break that window's boot.
+    // Detect the HUD window and only keep the safe DOM selection feature.
+    let isHud = false
+    try {
+      isHud = new URLSearchParams(globalThis.location?.search || '').get('win') === 'hud'
+    } catch { /* non-window context */ }
+
     const controller = createController(ctx)
     globalThis[GLOBAL_KEY] = controller
-    controller.start()
+    try {
+      controller.start()
+    } catch (err) {
+      console.warn('[selection-explainer] controller.start failed:', err)
+    }
 
-    ctx.register({
-      id: `${ID}.palette`,
-      area: PALETTE_AREA,
-      data: {
-        id: `${ID}.explain`,
-        label: 'Explain Selection',
-        keywords: ['explain', 'selection', 'ai', 'selection-explainer'],
-        run: () => controller.explainNow(),
-      },
-    })
+    const safeRegister = (entry) => {
+      try {
+        ctx.register(entry)
+      } catch (err) {
+        console.warn(`[selection-explainer] skipping area ${entry.area}:`, err)
+      }
+    }
 
-    ctx.register({
-      id: `${ID}.keybind`,
-      area: KEYBINDS_AREA,
-      data: {
-        id: `${ID}.explain`,
-        label: 'Explain Selection',
-        category: 'Selection Explainer',
-        defaults: ['mod+shift+e'],
-        run: () => controller.explainNow(),
-      },
-    })
+    if (!isHud) {
+      safeRegister({
+        id: `${ID}.palette`,
+        area: PALETTE_AREA,
+        data: {
+          id: `${ID}.explain`,
+          label: 'Explain Selection',
+          keywords: ['explain', 'selection', 'ai', 'selection-explainer'],
+          run: () => controller.explainNow(),
+        },
+      })
 
-    ctx.register({
-      id: `${ID}.status-chip`,
-      area: 'statusBar.right',
-      order: 150,
-      render: () => jsx(StatusChip, { controller }),
-    })
+      safeRegister({
+        id: `${ID}.keybind`,
+        area: KEYBINDS_AREA,
+        data: {
+          id: `${ID}.explain`,
+          label: 'Explain Selection',
+          category: 'Selection Explainer',
+          defaults: ['mod+shift+e'],
+          run: () => controller.explainNow(),
+        },
+      })
+
+      safeRegister({
+        id: `${ID}.status-chip`,
+        area: 'statusBar.right',
+        order: 150,
+        render: () => jsx(StatusChip, { controller }),
+      })
+    }
   },
 }
