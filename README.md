@@ -54,6 +54,31 @@ Then **restart the Hermes desktop app backend** (quit & reopen the app) and
 flip on the desktop half under **Settings → Plugins** (unified desktop halves
 are opt-in by design).
 
+## Multi-profile setups (important)
+
+The desktop half (chip, floating card) is **app-global**: it loads in every
+window of the desktop app, whatever profile that window is on. The Python half
+is **per profile**: the multiplex gateway mounts `/api/plugins/<id>/…` only for
+profiles that carry the package in their own
+`~/.hermes/profiles/<p>/plugins/` **and** list it in their own
+`plugins.enabled`. Symptom when a profile is skipped: the chip appears, the
+card opens, and every explain request fails with `404 {"detail":"Not Found"}`.
+
+Roll out to the default root **and every profile** in one go:
+
+```bash
+./deploy.sh --all-profiles
+```
+
+Or by hand, per profile: copy the package into
+`~/.hermes/profiles/<p>/plugins/selection-explainer-hermes/`, then
+`hermes -p <p> plugins enable selection-explainer-hermes`. (The CLI refuses to
+enable a package that lives only in the default root, so the copy is not
+optional.)
+
+Explanations always answer with **that profile's** active model — `ctx.llm`
+binds per profile — which is usually what you want in a multi-bot setup.
+
 ## Verify
 
 ```bash
